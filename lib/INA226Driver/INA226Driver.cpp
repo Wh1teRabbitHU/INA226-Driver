@@ -22,15 +22,17 @@ void INA226Driver::init(byte alertPin) {
 
 void INA226Driver::calibrate(byte maxCurrent, float shuntResistance) {
 	currentLSB = maxCurrent / INA226_MAX_RESOLUTION;
+  powerLSB = 25*currentLSB;
 	uint16_t calibrationValue = INA226_SCALE_CONST / (currentLSB * shuntResistance);
 
 	Serial.print("Calibration value: ");
-	Serial.println(calibrationValue, 16);
+	Serial.println(calibrationValue);
 
 	writeToModule(INA226_CALIBRATION_ADDR, calibrationValue);
 }
 
 Measurement_t INA226Driver::readMeasurements() {
+  uint16_t configValue = readFromModule(INA226_CONFIG_ADDR);
 	uint16_t shuntVoltage = readFromModule(INA226_SHUNT_ADDR);
 	uint16_t busVoltage = readFromModule(INA226_BUS_ADDR);
 	uint16_t current = readFromModule(INA226_CURRENT_ADDR);
@@ -38,10 +40,10 @@ Measurement_t INA226Driver::readMeasurements() {
 
 	Measurement_t measurement;
 
-	measurement.shuntVoltage = shuntVoltage;
-	measurement.busVoltage = busVoltage;
-	measurement.current = current;
-	measurement.power = power;
+	measurement.shuntVoltage = (shuntVoltage * INA226_SHUNT_LSB);
+	measurement.busVoltage = (busVoltage * INA226_BUS_LSB) * 1000;
+	measurement.current = current * currentLSB * 1000 * 1000;
+	measurement.power = power * powerLSB * 1000 * 1000;
 
 	return measurement;
 }
@@ -59,13 +61,19 @@ uint16_t INA226Driver::readFromModule(byte address) {
 	Wire.requestFrom(i2cAddress, 2);
 
 	if (Wire.available()) {
-		return Wire.read();
+		byte firstByte = Wire.read();
+    byte secondByte = Wire.read();
+
+    return (firstByte << 8) + secondByte;
 	}
 
 	return -1;
 }
 
 void INA226Driver::writeToModule(byte address, uint16_t data) {
+  Serial.print("Data sent: ");
+  Serial.print((byte) data >> 8, 2);
+  Serial.println((byte) data | 128, 2);
 	Wire.beginTransmission(i2cAddress);
 	Wire.write(address);
 	Wire.write((byte) data >> 8);

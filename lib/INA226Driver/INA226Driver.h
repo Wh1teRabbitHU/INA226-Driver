@@ -15,15 +15,15 @@
 #define INA226_ID_ADDR          0xFF
 
 #define INA226_SCALE_CONST      0.00512
-#define INA226_MAX_RESOLUTION   32768
+#define INA226_MAX_RESOLUTION   32768.0
 #define INA226_SHUNT_LSB        2.5 // uV
 #define INA226_BUS_LSB          1.25 // mV
 
 struct Measurement_t {
-	uint16_t shuntVoltage;
-	uint16_t busVoltage;
-	uint16_t current;
-	uint16_t power;
+	float shuntVoltage;
+	float busVoltage;
+	float current;
+	float power;
 };
 
 class INA226Driver {
@@ -39,7 +39,8 @@ class INA226Driver {
 
 	private:
 		byte i2cAddress;
-		byte currentLSB;
+		float currentLSB; // A
+    float powerLSB; // W
 		byte alertPin;
 
 		uint16_t readFromModule(byte address);
