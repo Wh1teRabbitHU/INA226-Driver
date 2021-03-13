@@ -71,13 +71,10 @@ uint16_t INA226Driver::readFromModule(byte address) {
 }
 
 void INA226Driver::writeToModule(byte address, uint16_t data) {
-  Serial.print("Data sent: ");
-  Serial.print((byte) data >> 8, 2);
-  Serial.println((byte) data | 128, 2);
 	Wire.beginTransmission(i2cAddress);
 	Wire.write(address);
 	Wire.write((byte) data >> 8);
-	Wire.write((byte) data | 256);
+	Wire.write((byte) data | 255);
 	Wire.endTransmission();
 }
 
